@@ -13,3 +13,5 @@ backend_api/src/modules/
 ├── 12. gamification/   # Tích lũy điểm thưởng (XP), Huy hiệu, Chuỗi ngày học, Bảng xếp hạng
 ├── 13. notifications/  # Push Notification phụ huynh khi con nộp bài, Nhắc nhở, Banner
 └── 14. audit-logs/     # Giám sát nhật ký hoạt động hệ thống cho Quản trị viên
+
+cách chạy server: mở terminal ngay tại backend_api õ lênh: "npm run dev"
