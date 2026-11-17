@@ -49,6 +49,21 @@ export interface ResetPasswordDTO {
 // Alias hỗ trợ tương thích ngược
 export type resetpasswordDTO = ResetPasswordDTO;
 
+// Đăng nhập bằng số điện thoại
+export interface ParentSendOtpDTO {
+  phoneNumber: string;
+}
+// alias hổ trợ tương thích ngược
+export type parentsenotpDTO = ParentSendOtpDTO;
+
+// xác thực otp để đăng nhập
+export interface ParentVerifyOtpDTO {
+  phoneNumber: string;
+  otpCode: string;
+}
+// alias hổ trợ tương thích ngược
+export type parentverifyotpDTO = ParentVerifyOtpDTO;
+
 // Response DTOs 
 
 export interface UserResponseDTO {

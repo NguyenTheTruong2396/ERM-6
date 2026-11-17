@@ -1,6 +1,7 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { AuthModel, IUser } from './auth.model';
+import crypto from 'crypto';
 import {
   RegisterDTO,
   VerifyRegisterDTO,
@@ -11,6 +12,8 @@ import {
   toUserResponseDTO
 } from './auth.dto';
 import { sendEmailOTP } from '../../shared/utils/mailer';
+import { sendSmsOtp } from '../../shared/utils/sms';
+
 
 const DEFAULT_ROLE_ID = 3; // Mặc định là học sinh (student)
 
@@ -132,5 +135,68 @@ export const AuthService = {
     const newPasswordHash = await bcrypt.hash(newPassword, 10);
     await AuthModel.updatePassword(dto.email, newPasswordHash);
     return { message: 'Đặt lại mật khẩu thành công! Bạn có thể đăng nhập bằng mật khẩu mới.' };
+  },
+
+  // Bước 1: Phụ huynh nhập SĐT -> Kiểm tra SĐT nhà trường cấp -> Tạo & gửi OTP qua SMS Server
+  async requestParentLoginOtp(phoneNumber: string) {
+    const cleanPhone = phoneNumber.trim();
+
+    // Kiểm tra số điện thoại có thuộc tài khoản phụ huynh đang hoạt động không
+    const parent = await AuthModel.findActiveParentByPhone(cleanPhone);
+    if (!parent) {
+      throw new Error('PARENT_NOT_REGISTERED_BY_SCHOOL');
+    }
+
+    // Tạo mã OTP 6 số ngẫu nhiên (hết hạn sau 5 phút)
+    const otpCode = crypto.randomInt(100000, 999999).toString();
+    const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
+
+    // Vô hiệu hóa các OTP cũ & lưu OTP mới vào DB
+    await AuthModel.invalidateOldOtps(cleanPhone, 'PARENT_LOGIN');
+    await AuthModel.createOtp(cleanPhone, otpCode, 'PARENT_LOGIN', expiresAt);
+
+    // Gọi sang SMS Server (lấy url & token từ bảng settings)
+    await sendSmsOtp(cleanPhone, otpCode);
+
+    return {
+      phoneNumber: cleanPhone,
+      fullName: parent.full_name,
+      expiresInSeconds: 300,
+    };
+  },
+
+  // Bước 2: Phụ huynh nhập mã OTP -> Xác thực & cấp JWT Token
+  async verifyParentLoginOtp(phoneNumber: string, otpCode: string): Promise<AuthResponseDTO> {
+    const cleanPhone = phoneNumber.trim();
+    const cleanOtp = otpCode.trim();
+
+    const parent = await AuthModel.findActiveParentByPhone(cleanPhone);
+    if (!parent) {
+      throw new Error('PARENT_NOT_REGISTERED_BY_SCHOOL');
+    }
+
+    const validOtp = await AuthModel.findLatestActiveOtp(cleanPhone, 'PARENT_LOGIN');
+    if (!validOtp) {
+      throw new Error('INVALID_OR_EXPIRED_OTP');
+    }
+
+    await AuthModel.markOtpAsUsed(validOtp.id);
+
+    const secret = process.env.JWT_SECRET || 'erm6_jwt_secret';
+    const token = jwt.sign(
+      {
+        userId: parent.id,
+        roleId: parent.role_id,
+        role: 'parent',
+        phoneNumber: parent.phone_number,
+      },
+      secret,
+      { expiresIn: '7d' }
+    );
+
+    return {
+      user: toUserResponseDTO(parent),
+      token,
+    };
   },
 };

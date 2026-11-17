@@ -109,6 +109,21 @@ export const AuthModel = {
     );
   },
 
+  // Tìm tài khoản phụ huynh đã được nhà trường cấp sẵn theo SĐT
+  async findActiveParentByPhone(phoneNumber: string): Promise<IUser | null> {
+    const res = await dbPool.query<IUser>(
+      `SELECT u.* 
+       FROM ${SCHEMA}.users u
+       JOIN ${SCHEMA}.role r ON u.role_id = r.id
+       WHERE u.phone_number = $1 
+         AND r.name = 'parent' 
+         AND u.is_active = TRUE
+       LIMIT 1`,
+      [phoneNumber]
+    );
+    return res.rows[0] || null;
+  },
+
   // 6. Truy vấn bảng otp (bảng số ít: user_management.otp)
   async invalidateOldOtps(target: string, purpose: string): Promise<void> {
     await dbPool.query(

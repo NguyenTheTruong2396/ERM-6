@@ -6,6 +6,8 @@ import {
   LoginEmailDTO,
   ForgotPasswordDTO,
   ResetPasswordDTO,
+  ParentSendOtpDTO,
+  ParentVerifyOtpDTO
 } from './auth.dto';
 
 export const AuthController = {
@@ -117,6 +119,73 @@ export const AuthController = {
       return res.status(200).json({ success: true, ...result });
     } catch (error: any) {
       return res.status(400).json({ success: false, message: error.message });
+    }
+  },
+
+  async sendParentOtp(req: Request, res: Response) {
+    try {
+      const phoneNumber = req.body.phoneNumber || req.body.phone;
+      if (!phoneNumber || !String(phoneNumber).trim()) {
+        return res.status(400).json({
+          success: false,
+          message: 'Vui lòng nhập số điện thoại phụ huynh (phoneNumber)!',
+        });
+      }
+
+      const data = await AuthService.requestParentLoginOtp(String(phoneNumber));
+      return res.status(200).json({
+        success: true,
+        message: 'Mã OTP đã được gửi đến số điện thoại của phụ huynh!',
+        data,
+      });
+    } catch (error: any) {
+      if (error.message === 'PARENT_NOT_REGISTERED_BY_SCHOOL') {
+        return res.status(404).json({
+          success: false,
+          message: 'Số điện thoại này chưa được nhà trường cấp tài khoản phụ huynh hoặc đã bị khóa!',
+        });
+      }
+      return res.status(500).json({
+        success: false,
+        message: error.message || 'Lỗi máy chủ khi gửi mã OTP!',
+      });
+    }
+  },
+
+  async verifyParentOtp(req: Request, res: Response) {
+    try {
+      const phoneNumber = req.body.phoneNumber || req.body.phone;
+      const otpCode = req.body.otpCode || req.body.otp;
+      if (!phoneNumber || !otpCode) {
+        return res.status(400).json({
+          success: false,
+          message: 'Vui lòng nhập đầy đủ số điện thoại (phoneNumber) và mã OTP (otpCode / otp)!',
+        });
+      }
+
+      const data = await AuthService.verifyParentLoginOtp(String(phoneNumber), String(otpCode));
+      return res.status(200).json({
+        success: true,
+        message: 'Đăng nhập phụ huynh thành công!',
+        data,
+      });
+    } catch (error: any) {
+      if (error.message === 'INVALID_OR_EXPIRED_OTP') {
+        return res.status(400).json({
+          success: false,
+          message: 'Mã OTP không chính xác hoặc đã hết hạn!',
+        });
+      }
+      if (error.message === 'PARENT_NOT_REGISTERED_BY_SCHOOL') {
+        return res.status(404).json({
+          success: false,
+          message: 'Không tìm thấy tài khoản phụ huynh hợp lệ!',
+        });
+      }
+      return res.status(500).json({
+        success: false,
+        message: error.message || 'Lỗi máy chủ khi xác thực OTP!',
+      });
     }
   },
 };
