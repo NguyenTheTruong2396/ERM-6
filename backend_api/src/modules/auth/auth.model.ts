@@ -2,7 +2,7 @@ import dbPool from "../../config/database";
 
 const SCHEMA = 'user_management';
 
-// Khai báo kiểu dữ liệu khớp với Database
+// Database type definitions
 export interface IUser {
   id: number;
   email: string | null;
@@ -32,9 +32,9 @@ export interface IOtp {
   created_at: Date;
 }
 
-// Truy vấn dữ liệu
+// Data queries
 export const AuthModel = {
-  // 1. Truy vấn bảng users
+  // 1. Query users table
   async findUserByEmail(email: string): Promise<IUser | null> {
     const res = await dbPool.query<IUser>(
       `SELECT * FROM ${SCHEMA}.users WHERE email = $1 LIMIT 1`,
@@ -59,7 +59,7 @@ export const AuthModel = {
     return res.rows[0] || null;
   },
 
-  // 2. Tạo tài khoản người dùng bằng Email
+  // 2. Create user account with Email
   async createUserWithEmail(
     email: string,
     passwordhash: string,
@@ -74,7 +74,7 @@ export const AuthModel = {
     return res.rows[0] || null;
   },
 
-  // 3. Cập nhật lại thông tin nếu tài khoản đăng ký dở chưa kích hoạt
+  // 3. Update unverified user registration details
   async updateUnverifiedUser(
     email: string,
     passwordHash: string,
@@ -90,7 +90,7 @@ export const AuthModel = {
     return res.rows[0];
   },
 
-  // 4. Kích hoạt tài khoản
+  // 4. Activate user account
   async activateUserByEmail(email: string): Promise<IUser> {
     const res = await dbPool.query<IUser>(
       `UPDATE ${SCHEMA}.users SET is_active = TRUE, updated_at = CURRENT_TIMESTAMP 
@@ -100,7 +100,7 @@ export const AuthModel = {
     return res.rows[0];
   },
 
-  // 5. Đổi mật khẩu mới
+  // 5. Update new password
   async updatePassword(email: string, newPasswordHash: string): Promise<void> {
     await dbPool.query(
       `UPDATE ${SCHEMA}.users SET password_hash = $1, is_active = TRUE, updated_at = CURRENT_TIMESTAMP 
@@ -109,7 +109,7 @@ export const AuthModel = {
     );
   },
 
-  // Tìm tài khoản phụ huynh đã được nhà trường cấp sẵn theo SĐT
+  // Find active parent account pre-provisioned by school by phone number
   async findActiveParentByPhone(phoneNumber: string): Promise<IUser | null> {
     const res = await dbPool.query<IUser>(
       `SELECT u.* 
@@ -124,7 +124,42 @@ export const AuthModel = {
     return res.rows[0] || null;
   },
 
-  // 6. Truy vấn bảng otp (bảng số ít: user_management.otp)
+  // Find a user account by Google ID (sub)
+  async findUserByGoogleId(googleId: string): Promise<IUser | null> {
+    const res = await dbPool.query<IUser>(
+      `SELECT * FROM ${SCHEMA}.users WHERE google_id = $1 LIMIT 1`,
+      [googleId]
+    );
+    return res.rows[0] || null;
+  },
+
+  // Create a new user account for a first-time login via Google
+  async createGoogleUser(data: {
+    googleId: string;
+    fullName: string;
+    avatarUrl?: string | null;
+    roleId?: number;
+  }): Promise<IUser> {
+    const res = await dbPool.query<IUser>(
+      `INSERT INTO ${SCHEMA}.users (google_id, full_name, avatar_url, role_id, is_active)
+       VALUES ($1, $2, $3, $4, TRUE)
+       RETURNING *`,
+      [data.googleId, data.fullName, data.avatarUrl || null, data.roleId || 3]
+    );
+    return res.rows[0];
+  },
+
+  // Update the avatar if the account does not yet have a profile picture
+  async updateAvatarIfEmpty(userId: number, avatarUrl: string): Promise<void> {
+    await dbPool.query(
+      `UPDATE ${SCHEMA}.users 
+       SET avatar_url = COALESCE(avatar_url, $1), updated_at = CURRENT_TIMESTAMP
+       WHERE id = $2`,
+      [avatarUrl, userId]
+    );
+  },
+
+  // 6. Query otp table (user_management.otp)
   async invalidateOldOtps(target: string, purpose: string): Promise<void> {
     await dbPool.query(
       `UPDATE ${SCHEMA}.otp SET is_used = TRUE 

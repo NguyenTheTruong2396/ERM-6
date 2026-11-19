@@ -3,23 +3,25 @@ import { AuthController } from './auth.controller';
 
 const router = Router();
 
-// 1. Luồng đăng ký & kích hoạt bằng Email
+// 1. Email registration & activation flow
 router.post('/register', AuthController.register);
 router.post('/verify-register', AuthController.verifyRegister);
 
-// 2. Luồng đăng nhập bằng Email & Mật khẩu
+// 2. Email & Password login flow
 router.post('/login', AuthController.login);
 
-// 3. Luồng quên mật khẩu & đặt lại mật khẩu qua Email
+// 3. Forgot password & reset password flow via Email
 router.post('/forgot-password', AuthController.forgotPassword);
 router.post('/reset-password', AuthController.resetPassword);
 
-// 4. Luồng đăng nhập Phụ huynh bằng Số điện thoại (OTP SMS)
+// 4. Parent phone login flow (SMS OTP)
 router.post('/parent/send-otp', AuthController.sendParentOtp);
 router.post('/parent/verify-otp', AuthController.verifyParentOtp);
 
-// Hỗ trợ thêm alias gọi trực tiếp /send-otp và /verify-otp
+// Backward compatibility aliases for /send-otp and /verify-otp
 router.post('/send-otp', AuthController.sendParentOtp);
 router.post('/verify-otp', AuthController.verifyParentOtp);
+// login with google
+router.post('/google', AuthController.googleLogin);
 
 export default router;
