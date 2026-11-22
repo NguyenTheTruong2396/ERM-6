@@ -6,8 +6,7 @@ import {
   LoginEmailDTO,
   ForgotPasswordDTO,
   ResetPasswordDTO,
-  ParentSendOtpDTO,
-  ParentVerifyOtpDTO
+  GoogleLoginDTO
 } from './auth.dto';
 
 export const AuthController = {
@@ -22,7 +21,7 @@ export const AuthController = {
       if (!email || !password || !fullName) {
         return res.status(400).json({
           success: false,
-          message: 'Vui lòng nhập đầy đủ email, mật khẩu (password) và họ tên (fullName)!',
+          message: 'Please provide email, password, and fullName!',
         });
       }
 
@@ -41,7 +40,7 @@ export const AuthController = {
       if (!email || !otp) {
         return res.status(400).json({
           success: false,
-          message: 'Vui lòng nhập email và mã OTP!',
+          message: 'Please provide email and OTP code!',
         });
       }
 
@@ -49,7 +48,7 @@ export const AuthController = {
       const data = await AuthService.verifyRegisterOTP(dto);
       return res.status(200).json({
         success: true,
-        message: 'Kích hoạt tài khoản thành công!',
+        message: 'Account activated successfully!',
         data,
       });
     } catch (error: any) {
@@ -66,7 +65,7 @@ export const AuthController = {
       if (!email || !password) {
         return res.status(400).json({
           success: false,
-          message: 'Vui lòng nhập email và mật khẩu (password)!',
+          message: 'Please provide email and password!',
         });
       }
 
@@ -74,7 +73,7 @@ export const AuthController = {
       const data = await AuthService.loginWithEmail(dto);
       return res.status(200).json({
         success: true,
-        message: 'Đăng nhập thành công!',
+        message: 'Login successful!',
         data,
       });
     } catch (error: any) {
@@ -89,7 +88,7 @@ export const AuthController = {
       if (!email) {
         return res.status(400).json({
           success: false,
-          message: 'Vui lòng nhập email!',
+          message: 'Please provide email!',
         });
       }
 
@@ -110,7 +109,7 @@ export const AuthController = {
       if (!email || !otp || !newPassword) {
         return res.status(400).json({
           success: false,
-          message: 'Vui lòng nhập đủ email, mã OTP và mật khẩu mới (newPassword)!',
+          message: 'Please provide email, OTP code, and newPassword!',
         });
       }
 
@@ -128,26 +127,26 @@ export const AuthController = {
       if (!phoneNumber || !String(phoneNumber).trim()) {
         return res.status(400).json({
           success: false,
-          message: 'Vui lòng nhập số điện thoại phụ huynh (phoneNumber)!',
+          message: 'Please provide parent phone number (phoneNumber)!',
         });
       }
 
       const data = await AuthService.requestParentLoginOtp(String(phoneNumber));
       return res.status(200).json({
         success: true,
-        message: 'Mã OTP đã được gửi đến số điện thoại của phụ huynh!',
+        message: 'OTP code has been sent to parent phone number!',
         data,
       });
     } catch (error: any) {
       if (error.message === 'PARENT_NOT_REGISTERED_BY_SCHOOL') {
         return res.status(404).json({
           success: false,
-          message: 'Số điện thoại này chưa được nhà trường cấp tài khoản phụ huynh hoặc đã bị khóa!',
+          message: 'This phone number is not registered for a parent account by the school or has been deactivated!',
         });
       }
       return res.status(500).json({
         success: false,
-        message: error.message || 'Lỗi máy chủ khi gửi mã OTP!',
+        message: error.message || 'Server error while sending OTP code!',
       });
     }
   },
@@ -159,32 +158,74 @@ export const AuthController = {
       if (!phoneNumber || !otpCode) {
         return res.status(400).json({
           success: false,
-          message: 'Vui lòng nhập đầy đủ số điện thoại (phoneNumber) và mã OTP (otpCode / otp)!',
+          message: 'Please provide phone number (phoneNumber) and OTP code (otpCode / otp)!',
         });
       }
 
       const data = await AuthService.verifyParentLoginOtp(String(phoneNumber), String(otpCode));
       return res.status(200).json({
         success: true,
-        message: 'Đăng nhập phụ huynh thành công!',
+        message: 'Parent login successful!',
         data,
       });
     } catch (error: any) {
       if (error.message === 'INVALID_OR_EXPIRED_OTP') {
         return res.status(400).json({
           success: false,
-          message: 'Mã OTP không chính xác hoặc đã hết hạn!',
+          message: 'Invalid or expired OTP code!',
         });
       }
       if (error.message === 'PARENT_NOT_REGISTERED_BY_SCHOOL') {
         return res.status(404).json({
           success: false,
-          message: 'Không tìm thấy tài khoản phụ huynh hợp lệ!',
+          message: 'Valid parent account not found!',
         });
       }
       return res.status(500).json({
         success: false,
-        message: error.message || 'Lỗi máy chủ khi xác thực OTP!',
+        message: error.message || 'Server error while verifying OTP code!',
+      });
+    }
+  },
+  // login with google
+  async googleLogin(req: Request, res: Response) {
+    try {
+      const { idToken } = req.body as GoogleLoginDTO;
+      if (!idToken || !idToken.trim()) {
+        return res.status(400).json({
+          success: false,
+          message: 'Google authentication token (idToken) is required.',
+        });
+      }
+
+      const data = await AuthService.loginWithGoogle(idToken);
+      return res.status(200).json({
+        success: true,
+        message: 'Google login successful.',
+        data,
+      });
+    } catch (error: any) {
+      if (error.message === 'INVALID_GOOGLE_TOKEN' || error.message === 'GOOGLE_EMAIL_NOT_FOUND' || error.message === 'GOOGLE_ACCOUNT_NOT_FOUND') {
+        return res.status(401).json({
+          success: false,
+          message: 'Invalid or expired Google token.',
+        });
+      }
+      if (error.message === 'ACCOUNT_DISABLED') {
+        return res.status(403).json({
+          success: false,
+          message: 'Your account has been disabled.',
+        });
+      }
+      if (error.message === 'EMAIL_NOT_REGISTERED_IN_SYSTEM') {
+        return res.status(404).json({
+          success: false,
+          message: 'This Google email is not registered in the system.',
+        });
+      }
+      return res.status(500).json({
+        success: false,
+        message: error.message || 'Internal server error during Google login.',
       });
     }
   },

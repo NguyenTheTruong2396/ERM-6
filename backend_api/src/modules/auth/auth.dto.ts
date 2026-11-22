@@ -1,8 +1,8 @@
 import { IUser } from "./auth.model";
 
-//Request DTOs
+// Request DTOs
 
-// Đăng ký tài khoản bằng Email
+// Register account with Email
 export interface RegisterDTO {
   email: string;
   fullName?: string;
@@ -12,57 +12,64 @@ export interface RegisterDTO {
   roleId?: number;
   roleid?: number;
 }
-// Alias hỗ trợ tương thích ngược
+// Backward compatibility alias
 export type registerDTO = RegisterDTO;
 
-// Xác thực tài khoản đăng ký bằng OTP
+// Verify registration with OTP
 export interface VerifyRegisterDTO {
   email: string;
   otp: string;
 }
-// Alias hỗ trợ tương thích ngược
+// Backward compatibility alias
 export type veryfyregisterDTO = VerifyRegisterDTO;
 
-// Đăng nhập bằng Email & Mật khẩu
+// Login with Email & Password
 export interface LoginEmailDTO {
   email: string;
   password?: string;
   passwordhash?: string;
 }
-// Alias hỗ trợ tương thích ngược
+// Backward compatibility alias
 export type loginemailDTO = LoginEmailDTO;
 
-// Yêu cầu quên mật khẩu
+// Forgot password request
 export interface ForgotPasswordDTO {
   email: string;
 }
-// Alias hỗ trợ tương thích ngược
+// Backward compatibility alias
 export type forgotpasswordDTO = ForgotPasswordDTO;
 
-// Đặt lại mật khẩu mới
+// Reset new password
 export interface ResetPasswordDTO {
   email: string;
   otp: string;
   newPassword?: string;
   newpassword?: string;
 }
-// Alias hỗ trợ tương thích ngược
+// Backward compatibility alias
 export type resetpasswordDTO = ResetPasswordDTO;
 
-// Đăng nhập bằng số điện thoại
+// Login with phone number
 export interface ParentSendOtpDTO {
   phoneNumber: string;
 }
-// alias hổ trợ tương thích ngược
+// Backward compatibility alias
 export type parentsenotpDTO = ParentSendOtpDTO;
 
-// xác thực otp để đăng nhập
+// Verify OTP for login
 export interface ParentVerifyOtpDTO {
   phoneNumber: string;
   otpCode: string;
 }
-// alias hổ trợ tương thích ngược
+// Backward compatibility alias
 export type parentverifyotpDTO = ParentVerifyOtpDTO;
+
+// Login with google
+export interface GoogleLoginDTO{
+  idToken: string;
+}
+// Backward compatibility alias
+export type googleloginDTO = GoogleLoginDTO;
 
 // Response DTOs 
 
@@ -85,7 +92,7 @@ export interface AuthResponseDTO {
   token: string;
 }
 
-// Mapper chuyển đổi User từ Database sang DTO trả về cho Client
+// Mapper to transform database User entity to Client Response DTO
 export const toUserResponseDTO = (user: IUser): UserResponseDTO => ({
   id: user.id,
   email: user.email,
