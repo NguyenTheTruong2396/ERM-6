@@ -182,6 +182,14 @@ export const AuthService = {
       throw new Error('INVALID_OR_EXPIRED_OTP');
     }
 
+    if (validOtp.otp_code !== cleanOtp) {
+      await AuthModel.incrementOtpAttempts(validOtp.id);
+      if ((validOtp.attempts ?? 0) + 1 >= 5) {
+        await AuthModel.markOtpAsUsed(validOtp.id);
+      }
+      throw new Error('INVALID_OR_EXPIRED_OTP');
+    }
+
     await AuthModel.markOtpAsUsed(validOtp.id);
 
     const secret = process.env.JWT_SECRET || 'erm6_jwt_secret';

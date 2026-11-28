@@ -18,6 +18,14 @@ import authRoutes from "./modules/auth/auth.route";
 // Mount all auth module routes under prefix /api/auth
 app.use("/api/auth", authRoutes);
 
+//module AI
+import aiRoutes from "./modules/ai/ai.route";
+app.use('/api/ai', aiRoutes);
+
+// speech_ai
+import speechaiRoutes from "./modules/speech-ai/speech_ai.route"
+app.use('/api/speech_ai', speechaiRoutes);
+
 // Handle 404 Not Found for undefined routes
 app.use((req: Request, res: Response) => {
   res.status(404).json({

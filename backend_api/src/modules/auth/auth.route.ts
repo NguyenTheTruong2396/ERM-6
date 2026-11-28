@@ -24,4 +24,7 @@ router.post('/verify-otp', AuthController.verifyParentOtp);
 // login with google
 router.post('/google', AuthController.googleLogin);
 
+// 5. Logout
+router.post('/logout', AuthController.logout);
+
 export default router;

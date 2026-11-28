@@ -229,4 +229,27 @@ export const AuthController = {
       });
     }
   },
+
+  // POST /api/auth/logout
+  async logout(req: Request, res: Response) {
+    try {
+      const authHeader = req.headers.authorization;
+      const token = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null;
+
+      if (!token) {
+        return res.status(400).json({
+          success: false,
+          message: 'Token is required!',
+        });
+      }
+
+      // Gọi AuthService.logout(token) để lưu vào blacklist hoặc xóa refreshToken trong DB
+      return res.status(200).json({
+        success: true,
+        message: 'Logout successful!',
+      });
+    } catch (error: any) {
+      return res.status(500).json({ success: false, message: error.message });
+    }
+  }
 };

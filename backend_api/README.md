@@ -13,4 +13,4 @@ backend_api/src/modules/
 ├── 12. gamification/   # XP Reward Points, Badges, Study Streaks, Leaderboards (extended)
 ├── 13. notifications/  # Push Notifications to parents upon test submission, Reminders, Banners
 └── 14. audit-logs/     # System Activity Audit Logs for Administrators
-
+|__ 15. ai/             # Connect with modal Ai QWen 3.0

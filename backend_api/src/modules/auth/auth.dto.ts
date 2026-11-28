@@ -71,6 +71,14 @@ export interface GoogleLoginDTO{
 // Backward compatibility alias
 export type googleloginDTO = GoogleLoginDTO;
 
+// Logout request
+export interface LogoutDTO {
+  refreshToken?: string;
+  fcmToken?: string;
+}
+// Backward compatibility alias
+export type logoutDTO = LogoutDTO;
+
 // Response DTOs 
 
 export interface UserResponseDTO {
@@ -106,3 +114,8 @@ export const toUserResponseDTO = (user: IUser): UserResponseDTO => ({
   gender: user.gender,
   isActive: user.is_active,
 });
+
+export interface LogoutResponseDTO {
+  success: boolean;
+  message: string;
+}
